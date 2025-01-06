@@ -1,0 +1,144 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <time.h>
+#include <sys/resource.h>
+
+#define N 9
+
+typedef struct {
+    int row;
+    int col;
+} Cell;
+
+// Check if a given number can be placed in the specified row and column of the grid
+bool is_valid(int grid[N][N], int row, int col, int num) {
+    for (int i = 0; i < N; i++) {
+        if (grid[row][i] == num) { // Check row
+            return false;
+        }
+        if (grid[i][col] == num) { // Check column
+            return false;
+        }
+        if (grid[(row / 3) * 3 + i / 3][(col / 3) * 3 + i % 3] == num) { // Check 3x3 box
+            return false;
+        }
+    }
+    return true;
+}
+
+// Find an empty cell (with value 0) in the grid
+Cell find_empty_cell(int grid[N][N]) {
+    Cell cell = { -1, -1 }; // Initialize with invalid cell coordinates
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            if (grid[i][j] == 0) { // If cell is empty
+                cell.row = i;
+                cell.col = j;
+                return cell; // Return the cell coordinates
+            }
+        }
+    }
+    return cell; // If no empty cell was found, return the invalid cell coordinates
+}
+
+// Print the grid to the console
+void print_grid(int grid[N][N]) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            printf("%d ", grid[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+int nodes_generated = 0;
+int nodes_expanded = 0;
+
+// Solve the Sudoku puzzle using Breadth-first search
+bool solve_sudoku(int grid[N][N], int* generated, int* expanded) {
+    Cell cell = find_empty_cell(grid); // Find the next empty cell
+    if (cell.row == -1 && cell.col == -1) { // If no empty cell was found, the puzzle is solved
+        return true;
+    }
+    for (int num = 1; num <= N; num++) {
+        nodes_generated++;
+        if (is_valid(grid, cell.row, cell.col, num)) { // If the number is valid for this cell
+            grid[cell.row][cell.col] = num; // Assign the number to the cell
+            if (solve_sudoku(grid, generated, expanded)) { // Recursively solve the rest of the puzzle
+                *expanded = *expanded + 1;
+                return true;
+            }
+            grid[cell.row][cell.col] = 0; // Backtrack: reset the cell to 0 and try the next number
+        }
+    }
+    *expanded = *expanded + 1; // No valid number was found for this cell, backtrack further
+    return false;
+}
+
+
+
+
+int main() {
+
+    clock_t start_time, end_time;
+    double cpu_time_used;
+
+    // Start the timer
+    start_time = clock();
+
+
+    int grid[N][N] = { {0, 6, 0, 7, 0, 4, 9, 0, 1},
+                     {2, 4, 3, 5, 0, 0, 0, 0, 0},
+                     {0, 9, 0, 3, 8, 6, 2, 0, 5},
+                     {6, 0, 9, 1, 0, 8, 0, 0, 4},
+                     {1, 5, 0, 9, 0, 3, 7, 0, 2},
+                     {0, 0, 4, 0, 5, 2, 0, 1, 0},
+                     {0, 8, 0, 2, 0, 1, 4, 0, 7},
+                     {0, 0, 7, 8, 0, 5, 0, 2, 0},
+                     {9, 0, 0, 0, 6, 0, 5, 0, 3} };
+
+    printf("Initial State :\n");
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            printf("%d ", grid[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+
+if (solve_sudoku(grid, &nodes_generated, &nodes_expanded)) {
+    
+    printf("Solution:\n");
+    print_grid(grid);
+    
+}
+else {
+    printf("No solution found!\n");
+}
+
+    // End the timer
+    end_time = clock();
+
+    // Calculate the CPU time used
+        cpu_time_used = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
+
+    printf("\nDetail:\n");
+
+
+    // Print the Run Time 
+    printf("\nRun Time: %f seconds\n", cpu_time_used);
+
+  // Declare a struct rusage variable named "usage" to hold resource usage information
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    
+    // Print the Memory Usage
+    printf("\nMemory Usage: %ld bytes\n", usage.ru_maxrss);
+    
+    //Print the node generated and expanded
+    printf("\nNodes generated: %d\n", nodes_generated);
+    printf("\nNodes expanded: %d\n", nodes_expanded);
+    
+    return 0;
+}
